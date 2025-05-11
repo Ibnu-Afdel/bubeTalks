@@ -25,11 +25,12 @@ class GenerateBubeResponseJob implements ShouldQueue
     {
         try {
             $apiKey = config('services.gemini.key');
+            // dd($apiKey);
+
 
             $response = Http::withHeaders([
-                'Authorization' => "Bearer $apiKey",
                 'Content-Type' => 'application/json',
-            ])->post('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', [
+            ])->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$apiKey", [
                 'contents' => [
                     [
                         'parts' => [
@@ -38,6 +39,7 @@ class GenerateBubeResponseJob implements ShouldQueue
                     ]
                 ]
             ]);
+
 
             if (!$response->successful()) {
                 throw new \Exception("Gemini API Error: " . $response->body());
