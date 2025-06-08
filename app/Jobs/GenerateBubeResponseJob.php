@@ -58,9 +58,7 @@ class GenerateBubeResponseJob implements ShouldQueue
                 'status' => 'completed',
             ]);
 
-            // 👇 Next: In Step 3 we'll dispatch a job to generate the voice
-            // GenerateBubeAudioJob::dispatch($this->message);
-
+            GenerateBubeAudioJob::dispatch($this->message);
         } catch (\Exception $e) {
             $this->message->update([
                 'status' => 'completed',

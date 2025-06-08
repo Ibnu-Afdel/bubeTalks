@@ -39,4 +39,9 @@ return [
         'key' => env('GEMINI_API_KEY'),
     ],
 
+    'unrealspeech' => [
+        'key' => env('UNREALSPEECH_API_KEY'),
+    ],
+
+
 ];
