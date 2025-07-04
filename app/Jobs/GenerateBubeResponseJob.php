@@ -34,7 +34,7 @@ class GenerateBubeResponseJob implements ShouldQueue
                 'contents' => [
                     [
                         'parts' => [
-                            ['text' => "Answer this wisely, as if you're a mysterious oracle: {$this->message->question}"]
+                            ['text' => "You are my witty, super-smart best friend. Give me a short, funny, and confident answer to this : {$this->message->question}"]
                         ]
                     ]
                 ]

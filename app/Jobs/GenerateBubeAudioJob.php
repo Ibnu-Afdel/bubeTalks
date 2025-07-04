@@ -10,13 +10,15 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class GenerateBubeAudioJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public BubeMessage $message;
-
+    private const CHUNK_SIZE = 1000; // Characters per chunk
+    private const TIMEOUT = 120; // 2 minutes timeout
 
     /**
      * Create a new job instance.
@@ -26,6 +28,102 @@ class GenerateBubeAudioJob implements ShouldQueue
         $this->message = $message;
     }
 
+    /**
+     * Clean text by removing markdown formatting
+     */
+    private function cleanText(string $text): string
+    {
+        // Remove markdown headers
+        $text = preg_replace('/^#+\s+/m', '', $text);
+        
+        // Remove bold/italic markers
+        $text = preg_replace('/\*\*(.*?)\*\*/', '$1', $text);
+        $text = preg_replace('/\*(.*?)\*/', '$1', $text);
+        
+        // Remove code blocks
+        $text = preg_replace('/```.*?```/s', '', $text);
+        
+        // Remove inline code
+        $text = preg_replace('/`(.*?)`/', '$1', $text);
+        
+        // Remove horizontal rules
+        $text = preg_replace('/^[-*_]{3,}$/m', '', $text);
+        
+        // Clean up multiple newlines
+        $text = preg_replace('/\n{3,}/', "\n\n", $text);
+        
+        return trim($text);
+    }
+
+    /**
+     * Split text into chunks
+     */
+    private function splitIntoChunks(string $text): array
+    {
+        $chunks = [];
+        $sentences = preg_split('/(?<=[.!?])\s+/', $text, -1, PREG_SPLIT_NO_EMPTY);
+        $currentChunk = '';
+
+        foreach ($sentences as $sentence) {
+            if (strlen($currentChunk . $sentence) > self::CHUNK_SIZE) {
+                if (!empty($currentChunk)) {
+                    $chunks[] = trim($currentChunk);
+                    $currentChunk = '';
+                }
+                // If a single sentence is longer than chunk size, split it by commas
+                if (strlen($sentence) > self::CHUNK_SIZE) {
+                    $parts = preg_split('/(?<=[,;])\s+/', $sentence, -1, PREG_SPLIT_NO_EMPTY);
+                    foreach ($parts as $part) {
+                        if (strlen($currentChunk . $part) > self::CHUNK_SIZE) {
+                            if (!empty($currentChunk)) {
+                                $chunks[] = trim($currentChunk);
+                                $currentChunk = '';
+                            }
+                            $chunks[] = trim($part);
+                        } else {
+                            $currentChunk .= ' ' . $part;
+                        }
+                    }
+                } else {
+                    $chunks[] = trim($sentence);
+                }
+            } else {
+                $currentChunk .= ' ' . $sentence;
+            }
+        }
+
+        if (!empty($currentChunk)) {
+            $chunks[] = trim($currentChunk);
+        }
+
+        return $chunks;
+    }
+
+    /**
+     * Generate audio for a single chunk
+     */
+    private function generateAudioChunk(string $text, string $apiKey, string $voiceId): string
+    {
+        $response = Http::timeout(self::TIMEOUT)
+            ->withHeaders([
+                'xi-api-key' => $apiKey,
+                'Content-Type' => 'application/json',
+            ])
+            ->post("https://api.elevenlabs.io/v1/text-to-speech/{$voiceId}", [
+                'text' => $text,
+                'model_id' => 'eleven_monolingual_v1',
+                'voice_settings' => [
+                    'stability' => 0.5,
+                    'similarity_boost' => 0.75,
+                ],
+            ]);
+
+        if (!$response->successful()) {
+            throw new \Exception('ElevenLabs Error: ' . $response->body());
+        }
+
+        return $response->body();
+    }
 
     /**
      * Execute the job.
@@ -33,28 +131,27 @@ class GenerateBubeAudioJob implements ShouldQueue
     public function handle(): void
     {
         try {
-            $apiKey = config('services.unrealspeech.key');
-            $text = $this->message->response_text;
+            $apiKey = config('services.elevenlabs.key');
+            $voiceId = config('services.elevenlabs.voice_id');
+            $text = $this->cleanText($this->message->response_text);
+            
+            // Split text into chunks
+            $chunks = $this->splitIntoChunks($text);
+            $audioChunks = [];
 
-            $response = Http::withHeaders([
-                'Authorization' => "Bearer $apiKey",
-                'Content-Type' => 'application/json',
-            ])->post('https://api.unrealspeech.com/speech', [
-                'Text' => $text,
-                'VoiceId' => 'Matthew', // You can change to 'Scarlett', 'James', etc.
-                'OutputFormat' => 'mp3',
-                'Speed' => 1.0,
-                'Bitrate' => '192k',
-            ]);
-
-            if (!$response->successful()) {
-                throw new \Exception('UnrealSpeech Error: ' . $response->body());
+            // Generate audio for each chunk
+            foreach ($chunks as $chunk) {
+                $audioChunks[] = $this->generateAudioChunk($chunk, $apiKey, $voiceId);
             }
 
-            $audio = $response->body();
-            $filename = 'bube-audio/' . $this->message->id . '.mp3';
+            // Combine audio chunks
+            $combinedAudio = '';
+            foreach ($audioChunks as $chunk) {
+                $combinedAudio .= $chunk;
+            }
 
-            Storage::disk('public')->put($filename, $audio);
+            $filename = 'bube-audio/' . $this->message->id . '.mp3';
+            Storage::disk('public')->put($filename, $combinedAudio);
 
             $this->message->update([
                 'audio_url' => Storage::url($filename),

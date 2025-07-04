@@ -21,7 +21,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('settings/password', Password::class)->name('settings.password');
     Route::get('settings/appearance', Appearance::class)->name('settings.appearance');
 
-    Route::get('/ask', AskBubePage::class)->name('ask-bube');
+    Route::get('/ask', AskBubePage::class)->name('ask');
+    Route::get('/feed', \App\Livewire\BubeFeed::class)->name('feed');
 });
 
 require __DIR__ . '/auth.php';
