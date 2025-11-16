@@ -21,6 +21,22 @@
                 <div class="flex items-start gap-3">
                     <div class="flex size-10 items-center justify-center rounded-full bg-[#f6deb0] text-[#7b4608]">Q</div>
                     <div class="flex-1 text-sm text-[#3a1f0b]">{{ $message->question }}</div>
+                    <div class="flex items-center gap-2">
+                        @if($message->is_bookmarked)
+                            <span class="rounded-full bg-[#fdebd0] px-3 py-1 text-xs font-semibold text-[#7b4608]">Saved</span>
+                        @endif
+                        <button
+                            type="button"
+                            class="rounded-full border border-[#e1c89b] bg-white/80 p-2 text-[#7b4608] shadow-sm transition hover:bg-white"
+                            wire:click="toggleBookmark({{ $message->id }})"
+                            wire:loading.attr="disabled"
+                        >
+                            <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M19 21 12 17 5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" fill="{{ $message->is_bookmarked ? '#f4b24c' : 'none' }}" />
+                                <path d="M5 5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4z" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 @if($message->audio_url)

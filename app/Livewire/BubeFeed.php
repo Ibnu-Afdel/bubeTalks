@@ -30,4 +30,17 @@ class BubeFeed extends Component
                 ->paginate(10)
         ]);
     }
+
+    public function toggleBookmark(int $messageId): void
+    {
+        $message = BubeMessage::query()
+            ->where('user_id', auth()->id())
+            ->findOrFail($messageId);
+
+        $message->update([
+            'is_bookmarked' => ! $message->is_bookmarked,
+        ]);
+
+        $this->resetPage();
+    }
 }

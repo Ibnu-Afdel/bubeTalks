@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('audio_url')->nullable();
             $table->enum('status', ['pending', 'completed'])->default('pending');
             $table->text('error_message')->nullable();
+            $table->boolean('is_bookmarked')->default(false);
             $table->timestamps();
         });
     }

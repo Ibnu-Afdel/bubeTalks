@@ -19,6 +19,11 @@ class BubeMessage extends Model
         'audio_url',
         'status',
         'error_message',
+        'is_bookmarked',
+    ];
+
+    protected $casts = [
+        'is_bookmarked' => 'boolean',
     ];
     public function user(): BelongsTo
     {

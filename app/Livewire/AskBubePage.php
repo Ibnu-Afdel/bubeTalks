@@ -13,6 +13,7 @@ class AskBubePage extends Component
 {
     public string $question = '';
     public $latestResponses;
+    public $savedMessages;
     public $hasPendingMessages = false;
 
     public function mount()
@@ -29,6 +30,8 @@ class AskBubePage extends Component
             ->take(3)
             ->get();
 
+        $this->loadSavedMessages();
+
         // Check if there are any pending messages or messages without audio
         $this->hasPendingMessages = $this->latestResponses->contains(function ($message) {
             return $message->status === 'pending' || 
@@ -39,6 +42,17 @@ class AskBubePage extends Component
         if ($this->hasPendingMessages) {
             $this->dispatch('refresh-audio');
         }
+    }
+
+    public function loadSavedMessages(): void
+    {
+        $this->savedMessages = BubeMessage::query()
+            ->where('user_id', auth()->id())
+            ->where('is_bookmarked', true)
+            ->whereNull('error_message')
+            ->latest('updated_at')
+            ->take(5)
+            ->get();
     }
 
     public function submit()
@@ -58,6 +72,19 @@ class AskBubePage extends Component
         $this->loadLatestResponses();
         $this->hasPendingMessages = true;
         session()->flash('message', 'Your question was sent to bube!');
+    }
+
+    public function toggleBookmark(int $messageId): void
+    {
+        $message = BubeMessage::query()
+            ->where('user_id', auth()->id())
+            ->findOrFail($messageId);
+
+        $message->update([
+            'is_bookmarked' => ! $message->is_bookmarked,
+        ]);
+
+        $this->loadLatestResponses();
     }
 
     #[Polling(interval: '1s')]
