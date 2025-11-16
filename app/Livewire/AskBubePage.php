@@ -24,6 +24,7 @@ class AskBubePage extends Component
     {
         $this->latestResponses = BubeMessage::query()
             ->where('user_id', auth()->id())
+            ->whereNull('error_message')
             ->latest()
             ->take(3)
             ->get();

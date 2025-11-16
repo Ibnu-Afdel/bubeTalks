@@ -25,6 +25,7 @@ class BubeFeed extends Component
         return view('livewire.bube-feed', [
             'messages' => BubeMessage::query()
                 ->where('user_id', auth()->id())
+                ->whereNull('error_message')
                 ->latest()
                 ->paginate(10)
         ]);

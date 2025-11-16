@@ -5,7 +5,7 @@
                 <x-app-logo />
                 <div>
                     <p class="text-xs uppercase tracking-[0.4em] text-[#b96a04]">Ask Bube</p>
-                    <h1 class="text-2xl font-semibold text-[#24180c]">What do you want to learn today?</h1>
+                    <h1 class="text-2xl font-semibold text-[#24180c]">What do you want to yap today?</h1>
                     <p class="text-sm text-[#5f4525]">Send a prompt, get a voiced response, and keep the thread flowing.</p>
                 </div>
             </div>

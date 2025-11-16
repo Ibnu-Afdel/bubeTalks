@@ -3,7 +3,7 @@
         $user = auth()->user();
         $baseQuery = \App\Models\BubeMessage::query()->where('user_id', $user->id);
         $totalMessages = (clone $baseQuery)->count();
-        $pendingMessages = (clone $baseQuery)->where('status', 'pending')->count();
+    $failedMessages = (clone $baseQuery)->whereNotNull('error_message')->count();
         $todayCount = (clone $baseQuery)->whereDate('created_at', now()->toDateString())->count();
         $recentMessages = (clone $baseQuery)->latest()->take(4)->get();
     @endphp
@@ -46,9 +46,9 @@
                 <p class="mt-1 text-sm text-[#5f4525]">All-time conversations with Bube</p>
             </div>
             <div class="rounded-2xl border border-[#ecdcc0] bg-[#fffaf1] p-5 shadow-lg shadow-[0_18px_40px_rgba(194,162,110,0.18)]">
-                <p class="text-xs uppercase tracking-[0.35em] text-[#b96a04]">Pending</p>
-                <p class="mt-3 text-3xl font-semibold text-[#24180c]">{{ number_format($pendingMessages) }}</p>
-                <p class="mt-1 text-sm text-[#5f4525]">Responses still being crafted</p>
+                <p class="text-xs uppercase tracking-[0.35em] text-[#b96a04]">Failed</p>
+                <p class="mt-3 text-3xl font-semibold text-[#24180c]">{{ number_format($failedMessages) }}</p>
+                <p class="mt-1 text-sm text-[#5f4525]">Responses that need another try</p>
             </div>
             <div class="rounded-2xl border border-[#ecdcc0] bg-[#fffaf1] p-5 shadow-lg shadow-[0_18px_40px_rgba(194,162,110,0.18)]">
                 <p class="text-xs uppercase tracking-[0.35em] text-[#b96a04]">Today</p>
