@@ -3,10 +3,12 @@
 namespace App\Livewire;
 
 use App\Models\BubeMessage;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\Attributes\Polling;
 
+#[Layout('components.layouts.app')]
 class BubeFeed extends Component
 {
     use WithPagination;

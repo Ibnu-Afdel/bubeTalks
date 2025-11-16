@@ -4,9 +4,11 @@ namespace App\Livewire;
 
 use App\Jobs\GenerateBubeResponseJob;
 use App\Models\BubeMessage;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\Attributes\Polling;
 
+#[Layout('components.layouts.app')]
 class AskBubePage extends Component
 {
     public string $question = '';
