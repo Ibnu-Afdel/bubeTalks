@@ -102,16 +102,22 @@ class GenerateBubeAudioJob implements ShouldQueue
     /**
      * Generate audio for a single chunk
      */
-    private function generateAudioChunk(string $text, string $apiKey, string $voiceId): string
+    private function generateAudioChunk(string $text, string $apiKey, string $voiceId, string $modelId): string
     {
         $response = Http::timeout(self::TIMEOUT)
+            ->withOptions([
+                'force_ip_resolve' => 'v4',
+                'curl' => [
+                    CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+                ],
+            ])
             ->withHeaders([
                 'xi-api-key' => $apiKey,
                 'Content-Type' => 'application/json',
             ])
             ->post("https://api.elevenlabs.io/v1/text-to-speech/{$voiceId}", [
                 'text' => $text,
-                'model_id' => 'eleven_monolingual_v1',
+                'model_id' => $modelId,
                 'voice_settings' => [
                     'stability' => 0.5,
                     'similarity_boost' => 0.75,
@@ -133,6 +139,7 @@ class GenerateBubeAudioJob implements ShouldQueue
         try {
             $apiKey = config('services.elevenlabs.key');
             $voiceId = config('services.elevenlabs.voice_id');
+            $modelId = config('services.elevenlabs.model_id', 'eleven_turbo_v2');
             $text = $this->cleanText($this->message->response_text);
             
             // Split text into chunks
@@ -141,7 +148,7 @@ class GenerateBubeAudioJob implements ShouldQueue
 
             // Generate audio for each chunk
             foreach ($chunks as $chunk) {
-                $audioChunks[] = $this->generateAudioChunk($chunk, $apiKey, $voiceId);
+                $audioChunks[] = $this->generateAudioChunk($chunk, $apiKey, $voiceId, $modelId);
             }
 
             // Combine audio chunks
