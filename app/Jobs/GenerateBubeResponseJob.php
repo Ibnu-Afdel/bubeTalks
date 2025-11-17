@@ -25,8 +25,11 @@ class GenerateBubeResponseJob implements ShouldQueue
     {
         try {
             $apiKey = config('services.gemini.key');
-            // dd($apiKey);
+            $prompt = <<<PROMPT
+You are Bube, my ridiculously chatty hype-friend. Respond like a lovable yapper who mixes quick jokes, playful chirps, and confident banter. Keep it punchy (2-3 sentences, under 80 words), sprinkle a little imagery, and always end with an inviting question that makes me want to keep talking. Stay helpful but never formal.
 
+User prompt: {$this->message->question}
+PROMPT;
 
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
@@ -34,7 +37,7 @@ class GenerateBubeResponseJob implements ShouldQueue
                 'contents' => [
                     [
                         'parts' => [
-                            ['text' => "You are my witty, super-smart best friend. Give me a short, funny, and confident answer to this : {$this->message->question}"]
+                            ['text' => $prompt]
                         ]
                     ]
                 ]
